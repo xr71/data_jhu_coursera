@@ -305,7 +305,7 @@ get("n", environment(quinto))
 # this will really help you debug 
 
 
-
+#####################################################################
 # DATES in R are set as n days from  1970-01-01
 # dates are stored in POSIXct (integer) or POSIXlt (list)
 weekdays
@@ -313,11 +313,50 @@ x <- Sys.time()
 x
 xp <- as.POSIXlt(x)
 names(unclass(xp))
-unclass(x) # this is simply the seconds since 1970-01-01
+unclass(x)
 strptime # this takes string convertions of datetime
 ?strptime # check the help to look up the %format of strptime
 # using datetime classes will take care of leap years and timezones
 # very handy!
+
+
+# More on dates and times
+# especially useful for analyzing time series data because of object recognition in graphics
+# this is considered a DATE CLASS in R
+d1 <- Sys.Date()
+class(d1)
+unclass(d1)
+# so as you can see, internally, R treats the date class as an integer in number of days since 1970-01-01
+
+d2 <- as.Date("1969-01-01")
+unclass(d2)
+
+t1 <- Sys.time()
+t1
+class(t1)
+unclass(t1) 
+t2 <- as.POSIXlt(Sys.time())
+class(t2)
+t2
+unclass(t2)
+# POSIXlt gives all of the contents of the date var in a list
+str(unclass(t2))
+
+t2$min # this will return just the minutes of the date var
+
+weekdays(d1)
+months(t1)
+quarters(t2)
+
+# help R recognize the data string 
+t3 <- "October 17, 1986 08:24"
+t4 <- strptime(t3, "%B %d, %Y %H:%M")
+t4
+class(t4)
+# we have turned a string vector, t3, into a date class variable, t4
+Sys.time() > t1
+Sys.time() - t1
+difftime(Sys.time(), t1, units = "days")
 
 
 
@@ -437,3 +476,172 @@ tapply(flags$animate, flags$landmass, mean)
 
 tapply(flags$population, flags$red, summary)
 tapply(flags$population, flags$landmass, summary)
+
+
+# More about loop functions
+# the generic apply, the multivariate mapply, and the split function
+
+x <- 1:4
+lapply(x, runif)
+# we can do the following function because of the ... pass in lapply
+lapply(x, runif, min=0, max=10)
+
+# the apply functions use a lot of anonymous functions
+
+matrix <- matrix(rnorm(200), 20, 10)
+matrix
+
+apply(matrix, 2, mean)
+apply(matrix, 1, sum)
+apply(matrix, 1, quantile, probs=c(0.25, 0.75))
+# in short, the apply function calculates along the margins of matrices
+
+
+
+# mapply can use more than just a single element
+mapply(rep,1:4, 4:1)
+# use mapply to generate random noise
+noise <- function(n, mean, sd) {
+    rnorm(n, mean, sd)
+}
+noise(5,1,2)
+# I can instantly vectorize this function
+mapply(noise, 1:5, 1:5, 2)
+# make sure to passing matching dimensions 
+mapply(noise, 1:5, 1:1, 2)
+
+
+
+# tapply 
+x <- seq(1:30)
+gr <- gl(3, 10)
+tapply(x, gr, mean)
+
+
+
+
+# the split function
+newx <- split(x, gr)
+newx
+data(airquality)
+s <- split(airquality, airquality$Month)
+sapply(s, function(x) colMeans(x[, c("Ozone", "Wind", "Temp")], na.rm = TRUE))
+
+
+
+
+#####################################################################
+# Looking at Data, the mighty str()
+
+data(plants)
+class(plants) # it is a data.frame
+# data.frame is rectangular, it has two dimensions (row by column)
+dim(plants)
+nrow(plants)
+ncol(plants)
+object.size(plants)
+names(plants)
+
+# let's preview just the top
+head(plants)
+head(x = plants, n = 10)
+tail(plants, 15)
+summary(plants)
+
+# explore categorical variables
+table(plants$Active_Growth_Period)
+
+str(plants)
+
+
+
+
+
+#####################################################################
+# R profiler
+# Note that you should not use Rprof() and the sys.time() together
+
+# premature optimization is the root of all evil
+
+system.time(for(i in 1:10000) print(i)) 
+
+Rprof(for(i in 1:10000) print(i))
+summaryRprof(for(i in 1:10000) print(i))
+
+
+
+
+
+
+#####################################################################
+# DEBUGGING
+
+# message, warning, error, condition (programmers created)
+
+# use the invisible() function to prevent printing
+
+# Debugging requires:
+#   What did you ACTUALLY fed into the function?
+#   How did you call the function?
+#   What were you expecting?
+#   What did you actually get?
+#   How does it differ?
+#   Perhaps your expectations were wrong in the first place
+#   Can you reproduce the problem (exactly)?
+
+# This should remind us that set.seed() is very important
+
+# Primary debugging tools include:
+#   traceback
+#   debug
+#   browser
+#   trace
+#   recover
+
+rm(list=ls())
+mean(x)
+traceback()
+# traceback will only give you the most recent error
+# so call traceback() right away
+
+lm(y~x)
+traceback()
+
+
+debug(lm)
+lm(y~x)
+
+
+options(error=recover)
+read.csv("nosuchfile")
+
+
+
+
+
+#####################################################################
+# BASE Graphics
+
+data(cars)
+?cars
+head(cars)
+plot(cars)
+plot(x = cars$speed, y = cars$dist)
+plot(x = cars$speed, y = cars$dist, xlab = "Speed")
+plot(x = cars$speed, y = cars$dist, ylab = "Stopping Distance")
+plot(x = cars$speed, y = cars$dist, xlab = "Speed", ylab = "Stopping Distance")
+
+# Use main to add a title
+plot(cars, main = "My Plot" )
+
+# Use sub to add a subtitle
+plot(cars, sub = "My Plot Subtitle")
+
+plot(cars, col=2)
+plot(cars, xlim=c(10,15))
+plot(cars, pch=2)
+
+
+data(mtcars)
+boxplot(mpg~cyl, data=mtcars)
+hist(mtcars$mpg)
